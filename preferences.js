@@ -9,6 +9,38 @@
     return m?`iOS ${m[1]}.${m[2]}${m[3]?'.'+m[3]:''}`:null;
   }
 
+  function versionNumber(value){
+    const m=String(value||'').match(/(\d+(?:\.\d+){0,2})/);
+    return m?m[1]:'';
+  }
+
+  function normalizedIOS(value){
+    const n=versionNumber(value);
+    return n?`iOS ${n}`:'';
+  }
+
+  function bindEditableIOS(os){
+    if(os.dataset.preferenceBound)return;
+    os.addEventListener('focus',()=>{
+      const n=versionNumber(os.value);
+      os.value=n;
+      requestAnimationFrame(()=>os.setSelectionRange(0,os.value.length));
+    });
+    const save=()=>{
+      const v=normalizedIOS(os.value);
+      if(v){
+        localStorage.setItem(OS_KEY,v);
+        os.value=v;
+      }else{
+        localStorage.removeItem(OS_KEY);
+        os.value='';
+      }
+    };
+    os.addEventListener('change',save);
+    os.addEventListener('blur',save);
+    os.dataset.preferenceBound='1';
+  }
+
   function applyPreferences(){
     const hardware=document.querySelector('#hardwareModel');
     const os=document.querySelector('#osVersion');
@@ -31,17 +63,12 @@
     if(os){
       if(savedOS)os.value=savedOS;
       else if(reportedOS)os.value=`${reportedOS} (browser-reported)`;
-      else os.value='Unknown — enter iOS version';
-      if(!os.dataset.preferenceBound){
-        const save=()=>{const v=os.value.trim();if(v)localStorage.setItem(OS_KEY,v)};
-        os.addEventListener('change',save);
-        os.addEventListener('blur',save);
-        os.dataset.preferenceBound='1';
-      }
+      else os.value='';
+      bindEditableIOS(os);
     }
 
-    if(note&&reportedOS&&!savedOS){
-      note.textContent += ` iOS version from the browser UA (${reportedOS}) may be frozen and can be edited.`;
+    if(note&&reportedOS&&!savedOS&&!note.textContent.includes('browser UA')){
+      note.textContent += ` iOS version from the browser UA (${reportedOS}) may be frozen; tap the OS field to enter the real version.`;
     }
   }
 
