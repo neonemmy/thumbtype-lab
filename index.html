@@ -33,11 +33,11 @@
 <main class="app">
 <header>
 <div><h1>ThumbType Lab</h1><div class="subtitle">Measure iPhone thumb touch accuracy and speed</div></div>
-<div class="header-actions"><button id="instructionsButton" class="icon-btn" type="button">Instructions</button><button id="newPhrase" class="icon-btn" type="button">New phrase</button></div>
+<div class="header-actions"><button id="musicToggle" class="icon-btn" type="button" aria-pressed="true">Music: On</button><button id="instructionsButton" class="icon-btn" type="button">Instructions</button><button id="newPhrase" class="icon-btn" type="button">New phrase</button></div>
 </header>
 <div class="stack">
 <section class="card">
-<div class="muted" style="font-size:12px">Current test</div><div id="modeLabel" class="mode">Left thumb only</div>
+<div class="row"><div class="muted" style="font-size:12px">Current test</div><div id="musicLevel" class="report-note">Level 1 of 9</div></div><div id="modeLabel" class="mode">Left thumb only</div>
 <div class="phrase-label">Type this phrase 3 times</div><div id="phrase" class="phrase">the quick brown fox</div>
 <div class="phrase-label">Detected keys</div><div id="enteredViewport" class="entered-box"><div id="enteredKeys" class="entered" aria-live="polite"></div></div>
 </section>
@@ -65,7 +65,8 @@
 </div>
 </main>
 <script src="./accuracy-audio.js?v=6"></script>
-<script src="./app.js?v=11"></script>
+<script src="./music.js?v=1"></script>
+<script src="./app.js?v=12"></script>
 <script src="./device-detect.js?v=4"></script>
 <script src="./preferences.js?v=2"></script>
 <script src="./results-reopen.js?v=1"></script>
