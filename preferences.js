@@ -1,0 +1,52 @@
+(()=>{
+  'use strict';
+  const HW_KEY='thumbtype.hardwareModel';
+  const OS_KEY='thumbtype.osVersion';
+
+  function browserReportedIOS(){
+    const ua=navigator.userAgent||'';
+    const m=ua.match(/OS (\d+)[_\.](\d+)(?:[_\.](\d+))?/i);
+    return m?`iOS ${m[1]}.${m[2]}${m[3]?'.'+m[3]:''}`:null;
+  }
+
+  function applyPreferences(){
+    const hardware=document.querySelector('#hardwareModel');
+    const os=document.querySelector('#osVersion');
+    const note=document.querySelector('#deviceNote');
+
+    const savedHardware=localStorage.getItem(HW_KEY);
+    const savedOS=localStorage.getItem(OS_KEY);
+    const reportedOS=browserReportedIOS();
+
+    if(hardware){
+      if(savedHardware)hardware.value=savedHardware;
+      if(!hardware.dataset.preferenceBound){
+        const save=()=>{const v=hardware.value.trim();if(v)localStorage.setItem(HW_KEY,v)};
+        hardware.addEventListener('change',save);
+        hardware.addEventListener('blur',save);
+        hardware.dataset.preferenceBound='1';
+      }
+    }
+
+    if(os){
+      if(savedOS)os.value=savedOS;
+      else if(reportedOS)os.value=`${reportedOS} (browser-reported)`;
+      else os.value='Unknown — enter iOS version';
+      if(!os.dataset.preferenceBound){
+        const save=()=>{const v=os.value.trim();if(v)localStorage.setItem(OS_KEY,v)};
+        os.addEventListener('change',save);
+        os.addEventListener('blur',save);
+        os.dataset.preferenceBound='1';
+      }
+    }
+
+    if(note&&reportedOS&&!savedOS){
+      note.textContent += ` iOS version from the browser UA (${reportedOS}) may be frozen and can be edited.`;
+    }
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyPreferences,{once:true});
+  else applyPreferences();
+  addEventListener('pageshow',applyPreferences);
+  setTimeout(applyPreferences,150);
+})();
