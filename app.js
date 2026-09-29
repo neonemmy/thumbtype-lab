@@ -102,7 +102,7 @@
   function showReady(title){
     locked=true;$('#readyMode').textContent=modes[modeIndex].short;$('#readyTitle').textContent=title;$('#readyText').innerHTML=`${modes[modeIndex].instruction}<br>Repetition ${repetition} of ${repetitions}.`;$('#readyModal').classList.remove('hidden');$('#status').textContent='Press Go when ready.';
   }
-  function hideReady(){if(!locked||completed)return;ensureAudio();$('#readyModal').classList.add('hidden');locked=false;runStart=performance.now();$('#liveSpeed').textContent='0 WPM';$('#status').textContent=modes[modeIndex].instruction;}
+  function hideReady(){if(!locked||completed)return;ensureAudio();accuracyAudio.stop();$('#readyModal').classList.add('hidden');locked=false;runStart=performance.now();$('#liveSpeed').textContent='0 WPM';$('#status').textContent=modes[modeIndex].instruction;}
 
   function findHitKey(x,y){for(const k of keys){const r=k.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return k.dataset.key}return null}
   function addDot(e){const r=keyboard.getBoundingClientRect(),d=document.createElement('div');d.className='touch-dot';d.style.left=`${e.clientX-r.left}px`;d.style.top=`${e.clientY-r.top}px`;keyboard.appendChild(d);const t=setTimeout(()=>{d.remove();timers.delete(t)},450);timers.add(t)}
@@ -116,6 +116,7 @@
       else {const t=touches[a.touchIndex],expected=phrase[a.expectedIndex],target=keyMap.get(expected);let dx=null,dy=null;if(target){const r=target.getBoundingClientRect();dx=t.clientX-(r.left+r.width/2);dy=t.clientY-(r.top+r.height/2)}aligned.push({...t,type:'touch',alignment:a.type,expected,position:a.expectedIndex,dx:dx===null?null:+dx.toFixed(2),dy:dy===null?null:+dy.toFixed(2),durationMs,wpm})}
     });
     samples.push(...aligned);runStart=null;$('#liveSpeed').textContent=`${wpm.toFixed(0)} WPM`;
+    accuracyAudio.celebrate(document.hidden?null:audioCtx,modeIndex===modes.length-1&&repetition===repetitions);
     if(repetition<repetitions){repetition++;touches=[];alignment=[];consumed=0;renderHeader();renderEntered();renderTyped();showReady('Phrase complete');return}
     if(modeIndex<modes.length-1){modeIndex++;repetition=1;touches=[];alignment=[];consumed=0;renderHeader();renderEntered();renderTyped();showReady('Next thumb test');return}
     completed=true;locked=true;keys.forEach(k=>k.classList.remove('expected'));$('#shareResults').disabled=false;$('#rawData').disabled=false;showResults();
