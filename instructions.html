@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a84ff">
+<title>ThumbType Lab — Instructions</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#15171a;--muted:#68707b;--border:#d8dce2;--blue:#0a84ff}
+@media(prefers-color-scheme:dark){:root{--bg:#101214;--card:#1c2025;--text:#f4f6f8;--muted:#a7adb6;--border:#363b43}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:660px;margin:auto;padding:22px 14px 36px}.hero{margin-bottom:18px}.kicker{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--blue)}h1{font-size:30px;margin:4px 0 8px}p,li{font-size:16px;line-height:1.5}.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}.card h2{font-size:18px;margin:0 0 8px}.steps{padding-left:22px;margin:8px 0}.btn{display:block;width:100%;min-height:50px;border:0;border-radius:13px;background:var(--blue);color:#fff;font:700 17px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;text-decoration:none;text-align:center;padding:14px;margin-top:18px}.small{font-size:13px;line-height:1.45}.metric{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:10px;padding:10px;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<section class="hero"><div class="kicker">THUMBTYPE LAB</div><h1>How the test works</h1><p class="muted">This experiment compares touch placement, error rate and typing speed using your left thumb, right thumb, and both thumbs.</p></section>
+<section class="card"><h2>Before you begin</h2><ul class="steps"><li>Hold the phone naturally, as you normally would while typing.</li><li>Follow the blue thumb indicator for each test.</li><li>Type the displayed phrase on the on-screen test keyboard.</li><li>Each thumb mode is repeated three times.</li><li>Do not deliberately slow down to improve accuracy — type at a comfortable natural pace.</li></ul></section>
+<section class="card"><h2>Mistakes are useful data</h2><p>Do not stop or restart because of a wrong key. The test records substitutions, skipped characters, extra taps, touch position, and typing speed.</p></section>
+<section class="card"><h2>Sound feedback</h2><p>Button and typing feedback sounds follow the iPhone <strong>Silent Mode</strong> setting. If you want audio feedback, turn Silent Mode off. The test still works normally with sound disabled.</p></section>
+<section class="card"><h2>Your device</h2><p>Web apps cannot reliably ask iOS for the exact iPhone model. ThumbType Lab can make a best-effort guess from screen dimensions and pixel ratio, but several iPhone models share the same values. The model remains editable.</p><div id="deviceMetrics" class="metric"></div><p class="small muted">The raw screen/viewport measurements are also saved with test results, which is more useful scientifically than relying only on a guessed model name.</p></section>
+<a class="btn" href="./">Start the test</a>
+</main>
+<script>
+(()=>{
+ const w=Math.min(screen.width,screen.height),h=Math.max(screen.width,screen.height),dpr=devicePixelRatio||1;
+ const key=`${w}x${h}@${dpr}`;
+ const guesses={
+  '320x568@2':'iPhone SE (1st gen) / iPhone 5-series',
+  '375x667@2':'iPhone SE (2nd/3rd gen) / iPhone 6/7/8',
+  '414x736@3':'iPhone 6/7/8 Plus',
+  '375x812@3':'iPhone X / XS / 11 Pro',
+  '414x896@2':'iPhone XR / 11',
+  '414x896@3':'iPhone XS Max / 11 Pro Max',
+  '360x780@3':'iPhone 12 mini / 13 mini',
+  '390x844@3':'iPhone 12 / 12 Pro / 13 / 13 Pro / 14',
+  '428x926@3':'iPhone 12 Pro Max / 13 Pro Max / 14 Plus',
+  '393x852@3':'iPhone 14 Pro / 15 / 15 Pro / 16',
+  '430x932@3':'iPhone 14 Pro Max / 15 Plus / 15 Pro Max / 16 Plus',
+  '402x874@3':'Recent 6.3-inch iPhone class',
+  '440x956@3':'Recent 6.9-inch iPhone class'
+ };
+ const guess=guesses[key]||'No reliable model guess';
+ const vv=visualViewport?`${Math.round(visualViewport.width)}x${Math.round(visualViewport.height)} scale ${visualViewport.scale}`:'unavailable';
+ document.querySelector('#deviceMetrics').textContent=`Likely model: ${guess}\nScreen: ${w} × ${h} CSS px\nPixel ratio: ${dpr}\nViewport: ${innerWidth} × ${innerHeight}\nVisual viewport: ${vv}`;
+})();
+</script>
+</body>
+</html>
