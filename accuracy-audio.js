@@ -1,8 +1,9 @@
 (()=>{
   'use strict';
 
-  const MAX_CENTS=80;
+  const MAX_CENTS=95;
   const REFERENCE_HZ=900;
+  const EXTRA_DURATION=0.035;
   let pending=null;
 
   function expectedKey(){
@@ -19,8 +20,10 @@
 
   function detuneForDistance(distance){
     if(distance==null)return MAX_CENTS;
-    const d=Math.min(distance,2);
-    return MAX_CENTS*(d/2);
+    // Reach strong discordance by the intended key edge.  The square-root
+    // curve makes small placement errors audible without changing note class.
+    const d=Math.min(distance,1);
+    return MAX_CENTS*Math.sqrt(d);
   }
 
   document.addEventListener('pointerdown',e=>{
@@ -70,8 +73,9 @@
     };
 
     primary.stop=(when=0)=>{
-      pStop(when);
-      sStop(when);
+      // Give the ear enough time to perceive several beat cycles.
+      pStop(when+EXTRA_DURATION);
+      sStop(when+EXTRA_DURATION);
     };
 
     window.__thumbtypeLastAudioFeedback={
