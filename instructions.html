@@ -16,14 +16,14 @@
 <section class="hero"><div class="kicker">THUMBTYPE LAB</div><h1>How the test works</h1><p class="muted">This experiment compares touch placement, error rate and typing speed using your left thumb, right thumb, and both thumbs.</p></section>
 <section class="card"><h2>Before you begin</h2><ul class="steps"><li>Hold the phone naturally, as you normally would while typing.</li><li>Follow the blue thumb indicator for each test.</li><li>Type the displayed phrase on the on-screen test keyboard.</li><li>Each thumb mode is repeated three times.</li><li>Do not deliberately slow down to improve accuracy — type at a comfortable natural pace.</li></ul></section>
 <section class="card"><h2>Mistakes are useful data</h2><p>Do not stop or restart because of a wrong key. The test records substitutions, skipped characters, extra taps, touch position, and typing speed.</p></section>
-<section class="card"><h2>Sound feedback</h2><p>Typing feedback now changes pitch continuously with touch accuracy: taps near the center of the intended key sound higher, while taps farther away sound lower. Button and typing feedback sounds still follow the iPhone <strong>Silent Mode</strong> setting. If you want audio feedback, turn Silent Mode off.</p></section>
+<section class="card"><h2>Sound feedback</h2><p>Typing feedback uses two nearby tones. Centered taps sound nearly in unison; taps farther from the intended key center become increasingly discordant. Button and typing feedback sounds follow the iPhone <strong>Silent Mode</strong> setting.</p></section>
 <section class="card"><h2>Your device</h2><p>Web apps cannot reliably ask iOS for the exact iPhone model or OS version. ThumbType Lab ranks plausible models from screen and viewport metrics. Safari may report a frozen iOS version, so correct either field if you know the actual value.</p><div class="field"><label for="modelSelect">iPhone model</label><select id="modelSelect"></select></div><div class="field"><label for="iosVersion">iOS version</label><input id="iosVersion" inputmode="decimal" placeholder="27.0"></div><div id="deviceMetrics" class="metric"></div><p class="small muted">Your selections are saved on this device and used by the test results. The raw screen/viewport measurements are still saved separately.</p></section>
-<section class="card"><h2>Build diagnostics</h2><div id="buildInfo" class="metric"></div><p class="small muted">If something looks stale, send this block with your report.</p></section>
+<section class="card"><h2>Build diagnostics</h2><div id="buildInfo" class="metric">Checking live cache…</div><p class="small muted">“Expected” is the build this page belongs to. “Actual caches” comes directly from Cache Storage on this device.</p></section>
 <a class="btn" href="./">Start the test</a>
 </main>
 <script>
-(()=>{
- const BUILD={instructions:'v6',app:'v7',deviceDetect:'v4',preferences:'v2',styles:'v5',serviceWorker:'thumbtype-lab-v13'};
+(async()=>{
+ const BUILD={instructions:'v7',app:'v7',deviceDetect:'v4',preferences:'v2',accuracyAudio:'v3',styles:'v5',expectedCache:'thumbtype-lab-v16'};
  const HW_KEY='thumbtype.hardwareModel',OS_KEY='thumbtype.osVersion';
  const sw=Math.min(screen.width,screen.height),sh=Math.max(screen.width,screen.height),dpr=devicePixelRatio||1;
  const vv=window.visualViewport;
@@ -62,12 +62,15 @@
  osInput.value=numberFrom(localStorage.getItem(OS_KEY))||numberFrom(reported);
  osInput.addEventListener('focus',()=>requestAnimationFrame(()=>osInput.setSelectionRange(0,osInput.value.length)));
  const saveOS=()=>{const n=numberFrom(osInput.value);if(n){osInput.value=n;localStorage.setItem(OS_KEY,`iOS ${n}`)}else localStorage.removeItem(OS_KEY)};
- osInput.addEventListener('change',saveOS);
- osInput.addEventListener('blur',saveOS);
+ osInput.addEventListener('change',saveOS);osInput.addEventListener('blur',saveOS);
 
  const visual=vv?`${Math.round(vv.width)}x${Math.round(vv.height)} scale ${vv.scale}`:'unavailable';
  document.querySelector('#deviceMetrics').textContent=`Browser-reported iOS: ${reported||'unavailable'}\nScreen: ${sw} × ${sh} CSS px\nPixel ratio: ${dpr}\nViewport: ${innerWidth} × ${innerHeight}\nVisual viewport: ${visual}\nDetection key: viewport ${viewportKey}; screen ${sw}x${sh}@${dpr}`;
- document.querySelector('#buildInfo').textContent=`instructions.html ${BUILD.instructions}\napp.js ${BUILD.app}\ndevice-detect.js ${BUILD.deviceDetect}\npreferences.js ${BUILD.preferences}\nstyles.css ${BUILD.styles}\nservice worker ${BUILD.serviceWorker}`;
+
+ let cacheNames=[];try{cacheNames=await caches.keys()}catch{}
+ let reg=null;try{reg=await navigator.serviceWorker?.getRegistration();if(reg)await reg.update()}catch{}
+ const controller=navigator.serviceWorker?.controller;
+ document.querySelector('#buildInfo').textContent=`instructions.html ${BUILD.instructions}\napp.js ${BUILD.app}\naccuracy-audio.js ${BUILD.accuracyAudio}\nexpected cache ${BUILD.expectedCache}\nactual caches ${cacheNames.length?cacheNames.join(', '):'none visible'}\nservice worker controller ${controller?'yes':'no'}\nactive worker ${reg?.active?.state||'none'}\nwaiting worker ${reg?.waiting?.state||'none'}\ninstalling worker ${reg?.installing?.state||'none'}`;
 })();
 </script>
 </body>
