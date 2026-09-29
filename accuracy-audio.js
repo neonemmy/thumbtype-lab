@@ -1,90 +1,32 @@
 (()=>{
   'use strict';
-
-  const MAX_CENTS=95;
-  const REFERENCE_HZ=900;
-  const EXTRA_DURATION=0.035;
-  let pending=null;
-
-  function expectedKey(){
-    return document.querySelector('#keyboard .key.expected');
+  const referenceHz=900, scales=[50,150,300];
+  let voices=null;
+  function stop(){
+    if(!voices)return;
+    const {ctx,gain,oscillators}=voices,t=ctx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(0,t,.015);
+    oscillators.forEach(o=>{o.stop(t+.08);o.onended=()=>o.disconnect()});
+    oscillators[0].onended=()=>{oscillators[0].disconnect();gain.disconnect()};
+    voices=null;
   }
-
-  function normalizedDistance(key,x,y){
-    if(!key)return null;
-    const r=key.getBoundingClientRect();
-    const nx=(x-(r.left+r.width/2))/(r.width/2);
-    const ny=(y-(r.top+r.height/2))/(r.height/2);
-    return Math.hypot(nx,ny);
+  function start(ctx){
+    stop();
+    if(!ctx)return;
+    const gain=ctx.createGain(),oscillators=[ctx.createOscillator(),ctx.createOscillator()];
+    gain.gain.setValueAtTime(0,ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(.045,ctx.currentTime+.04);
+    gain.connect(ctx.destination);
+    oscillators.forEach(o=>{o.type='sine';o.frequency.value=referenceHz;o.connect(gain);o.start()});
+    voices={ctx,gain,oscillators};
   }
-
-  function detuneForDistance(distance){
-    if(distance==null)return MAX_CENTS;
-    // Reach strong discordance by the intended key edge.  The square-root
-    // curve makes small placement errors audible without changing note class.
-    const d=Math.min(distance,1);
-    return MAX_CENTS*Math.sqrt(d);
+  function update(key,x,y,scaleCents){
+    const r=key?.getBoundingClientRect();
+    const distance=r&&r.width>0&&r.height>0?Math.hypot((x-r.left-r.width/2)/(r.width/2),(y-r.top-r.height/2)/(r.height/2)):null;
+    const cents=distance===null?0:scaleCents*Math.min(distance,2);
+    if(voices)voices.oscillators[1].detune.setTargetAtTime(cents,voices.ctx.currentTime,.025);
+    return {referenceHz,scaleCents,detuneCents:cents,secondaryHz:referenceHz*2**(cents/1200),normalizedDistance:distance,audioState:voices?.ctx.state||'unavailable'};
   }
-
-  document.addEventListener('pointerdown',e=>{
-    const keyboard=e.target.closest?.('#keyboard');
-    if(!keyboard)return;
-    const key=expectedKey();
-    const distance=normalizedDistance(key,e.clientX,e.clientY);
-    pending={
-      distance,
-      cents:detuneForDistance(distance),
-      expires:performance.now()+30
-    };
-  },true);
-
-  const C=window.AudioContext||window.webkitAudioContext;
-  if(!C)return;
-  const proto=C.prototype;
-  const originalCreate=proto.createOscillator;
-
-  proto.createOscillator=function(){
-    const primary=originalCreate.call(this);
-    const state=pending&&performance.now()<=pending.expires?pending:null;
-    if(!state)return primary;
-    pending=null;
-
-    const secondary=originalCreate.call(this);
-    const pConnect=primary.connect.bind(primary);
-    const pStart=primary.start.bind(primary);
-    const pStop=primary.stop.bind(primary);
-    const sConnect=secondary.connect.bind(secondary);
-    const sStart=secondary.start.bind(secondary);
-    const sStop=secondary.stop.bind(secondary);
-
-    primary.connect=(dest,...rest)=>{
-      pConnect(dest,...rest);
-      sConnect(dest,...rest);
-      return dest;
-    };
-
-    primary.start=(when=0)=>{
-      primary.type='sine';
-      secondary.type='sine';
-      primary.frequency.value=REFERENCE_HZ;
-      secondary.frequency.value=REFERENCE_HZ*Math.pow(2,state.cents/1200);
-      pStart(when);
-      sStart(when);
-    };
-
-    primary.stop=(when=0)=>{
-      // Give the ear enough time to perceive several beat cycles.
-      pStop(when+EXTRA_DURATION);
-      sStop(when+EXTRA_DURATION);
-    };
-
-    window.__thumbtypeLastAudioFeedback={
-      referenceHz:REFERENCE_HZ,
-      detuneCents:+state.cents.toFixed(1),
-      secondaryHz:+(REFERENCE_HZ*Math.pow(2,state.cents/1200)).toFixed(1),
-      normalizedDistance:state.distance==null?null:+state.distance.toFixed(3)
-    };
-
-    return primary;
-  };
+  window.ThumbTypeAudio={referenceHz,scales,get active(){return !!voices},scaleFor:(modeIndex,repetition)=>scales[(modeIndex+repetition-1)%scales.length],start,stop,update};
 })();

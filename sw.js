@@ -1,5 +1,5 @@
-const CACHE='thumbtype-lab-v16';
-const ASSETS=['./','./index.html','./instructions.html','./styles.css?v=5','./app.js?v=7','./device-detect.js?v=4','./preferences.js?v=2','./results-reopen.js?v=1','./accuracy-audio.js?v=3','./manifest.webmanifest','./icon.svg'];
+const CACHE='thumbtype-lab-v18';
+const ASSETS=['./','./index.html','./instructions.html','./styles.css?v=5','./app.js?v=9','./device-detect.js?v=4','./preferences.js?v=2','./results-reopen.js?v=1','./accuracy-audio.js?v=4','./manifest.webmanifest','./icon.svg'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));

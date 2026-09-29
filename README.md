@@ -21,3 +21,18 @@ On iPhone, open that URL in Safari and choose **Share → Add to Home Screen** t
 - per-mode speed-vs-accuracy comparison
 
 Results can be shared or downloaded as JSON.
+
+
+## Local development and checks
+
+Serve the repository with `python3 -m http.server 8765` and open
+`http://localhost:8765`. Run `node tests/verify.cjs` with Node.js 20 or newer
+for dependency-free regression checks covering audio mapping/lifecycle, all
+nine runs, sample exports, wrong keys/gaps, unavailable audio, and failed-share
+fallback versus cancellation. These use mocked DOM and audio APIs; they do
+not replace browser testing or listening on an iPhone.
+
+Before release, test Safari and the installed PWA for comfortable sound,
+Silent Mode behavior, background/foreground recovery, JSON delivery, and
+offline reload. Instructions → Build diagnostics should show the expected
+and actual cache versions matching.
