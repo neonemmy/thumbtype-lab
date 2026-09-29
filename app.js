@@ -19,24 +19,26 @@
     const w=Math.min(screen.width,screen.height), h=Math.max(screen.width,screen.height), dpr=window.devicePixelRatio||1;
     const key=`${w}x${h}@${dpr}`;
     const guesses={
-      '320x568@2':'iPhone SE (1st gen) / iPhone 5-series',
-      '375x667@2':'iPhone SE (2nd/3rd gen) / iPhone 6/7/8',
-      '414x736@3':'iPhone 6/7/8 Plus',
-      '375x812@3':'iPhone X / XS / 11 Pro',
-      '414x896@2':'iPhone XR / 11',
-      '414x896@3':'iPhone XS Max / 11 Pro Max',
-      '360x780@3':'iPhone 12 mini / 13 mini',
-      '390x844@3':'iPhone 12 / 12 Pro / 13 / 13 Pro / 14',
-      '428x926@3':'iPhone 12 Pro Max / 13 Pro Max / 14 Plus',
-      '393x852@3':'iPhone 14 Pro / 15 / 15 Pro / 16',
-      '430x932@3':'iPhone 14 Pro Max / 15 Plus / 15 Pro Max / 16 Plus',
-      '402x874@3':'Recent 6.3-inch iPhone class',
-      '440x956@3':'Recent 6.9-inch iPhone class'
+      // Prefer the newest known iPhone that matches each ambiguous screen profile.
+      '320x568@2':'iPhone SE (1st gen)',
+      '375x667@2':'iPhone SE (3rd gen)',
+      '414x736@3':'iPhone 8 Plus',
+      '375x812@3':'iPhone 11 Pro',
+      '414x896@2':'iPhone 11',
+      '414x896@3':'iPhone 11 Pro Max',
+      '360x780@3':'iPhone 13 mini',
+      '390x844@3':'iPhone 17e',
+      '428x926@3':'iPhone 14 Plus',
+      '393x852@3':'iPhone 16',
+      '430x932@3':'iPhone 16 Plus',
+      '402x874@3':'iPhone 18 Pro',
+      '420x912@3':'iPhone Air',
+      '440x956@3':'iPhone 18 Pro Max'
     };
     const guess=guesses[key];
     $('#hardwareModel').value=/iPhone/i.test(ua)?(guess||'iPhone — enter exact model'):'Unknown';
     const vv=window.visualViewport?`${Math.round(visualViewport.width)}×${Math.round(visualViewport.height)} @${visualViewport.scale}`:'unavailable';
-    $('#deviceNote').textContent=(guess?'Likely model inferred from screen metrics; verify if possible. ':'Exact iPhone model is not exposed to web apps. ')+`Screen ${w}×${h} CSS px, DPR ${dpr}, viewport ${innerWidth}×${innerHeight}, visual viewport ${vv}.`;
+    $('#deviceNote').textContent=(guess?'Newest known model matching this screen profile; older iPhones may share it. ':'Exact iPhone model is not exposed to web apps. ')+`Screen ${w}×${h} CSS px, DPR ${dpr}, viewport ${innerWidth}×${innerHeight}, visual viewport ${vv}.`;
   }
 
   function ensureAudio(){
