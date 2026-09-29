@@ -1,4 +1,4 @@
-const CACHE='thumbtype-lab-v3';
+const CACHE='thumbtype-lab-v4';
 const STATE='thumbtype-lab-state';
 const ASSETS=['./','./index.html','./instructions.html','./manifest.webmanifest','./icon.svg'];
 const ONBOARDED=new URL('./__onboarded__',self.registration.scope).href;
@@ -25,7 +25,17 @@ self.addEventListener('activate',e=>e.waitUntil((async()=>{
   }
 })()));
 
-async function cached(request){
+async function networkFirst(request,fallback='./index.html'){
+  try{
+    const r=await fetch(request,{cache:'no-store'});
+    if(r&&r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(request,copy));}
+    return r;
+  }catch{
+    return (await caches.match(request)) || caches.match(fallback);
+  }
+}
+
+async function cacheFirst(request){
   const hit=await caches.match(request);
   if(hit)return hit;
   try{
@@ -47,8 +57,11 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   e.respondWith((async()=>{
     const url=new URL(e.request.url);
-    const isIndex=url.origin===self.location.origin&&(url.pathname===new URL('./',self.registration.scope).pathname||url.pathname.endsWith('/index.html'));
-    const r=await cached(e.request);
+    const sameOrigin=url.origin===self.location.origin;
+    const indexPath=new URL('./',self.registration.scope).pathname;
+    const isIndex=sameOrigin&&(url.pathname===indexPath||url.pathname.endsWith('/index.html'));
+    const isNavigation=e.request.mode==='navigate';
+    const r=isNavigation?await networkFirst(e.request):await cacheFirst(e.request);
     if(!isIndex||!r)return r;
     const html=await r.text();
     const headers=new Headers(r.headers);headers.set('content-type','text/html; charset=utf-8');
