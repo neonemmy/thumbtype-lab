@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--text:#15171a;--muted:#68707b;--border:#d8dce2;--blue:#0a84ff}
 @media(prefers-color-scheme:dark){:root{--bg:#101214;--card:#1c2025;--text:#f4f6f8;--muted:#a7adb6;--border:#363b43}}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:660px;margin:auto;padding:22px 14px 36px}.hero{margin-bottom:18px}.kicker{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--blue)}h1{font-size:30px;margin:4px 0 8px}p,li{font-size:16px;line-height:1.5}.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}.card h2{font-size:18px;margin:0 0 8px}.steps{padding-left:22px;margin:8px 0}.btn{display:block;width:100%;min-height:50px;border:0;border-radius:13px;background:var(--blue);color:#fff;font:700 17px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;text-decoration:none;text-align:center;padding:14px;margin-top:18px}.small{font-size:13px;line-height:1.45}.metric{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:10px;padding:10px;margin-top:8px}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:660px;margin:auto;padding:22px 14px 36px}.hero{margin-bottom:18px}.kicker{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--blue)}h1{font-size:30px;margin:4px 0 8px}p,li{font-size:16px;line-height:1.5}.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}.card h2{font-size:18px;margin:0 0 8px}.steps{padding-left:22px;margin:8px 0}.btn{display:block;width:100%;min-height:50px;border:0;border-radius:13px;background:var(--blue);color:#fff;font:700 17px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;text-decoration:none;text-align:center;padding:14px;margin-top:18px}.small{font-size:13px;line-height:1.45}.metric{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:10px;padding:10px;margin-top:8px}.field{margin-top:12px}.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}.field select{width:100%;min-height:46px;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--text);padding:0 10px;font:16px -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
 </style>
 </head>
 <body>
@@ -17,51 +17,44 @@
 <section class="card"><h2>Before you begin</h2><ul class="steps"><li>Hold the phone naturally, as you normally would while typing.</li><li>Follow the blue thumb indicator for each test.</li><li>Type the displayed phrase on the on-screen test keyboard.</li><li>Each thumb mode is repeated three times.</li><li>Do not deliberately slow down to improve accuracy — type at a comfortable natural pace.</li></ul></section>
 <section class="card"><h2>Mistakes are useful data</h2><p>Do not stop or restart because of a wrong key. The test records substitutions, skipped characters, extra taps, touch position, and typing speed.</p></section>
 <section class="card"><h2>Sound feedback</h2><p>Button and typing feedback sounds follow the iPhone <strong>Silent Mode</strong> setting. If you want audio feedback, turn Silent Mode off. The test still works normally with sound disabled.</p></section>
-<section class="card"><h2>Your device</h2><p>Web apps cannot reliably ask iOS for the exact iPhone model. ThumbType Lab can make a best-effort guess from screen and viewport metrics. When multiple models share a class, it prefers the newest plausible model. The model remains editable in the test.</p><div id="deviceMetrics" class="metric"></div><p class="small muted">The raw screen/viewport measurements are also saved with test results, which is more useful scientifically than relying only on a guessed model name.</p></section>
+<section class="card"><h2>Your device</h2><p>Web apps cannot reliably ask iOS for the exact iPhone model. ThumbType Lab ranks plausible models from the screen and viewport metrics. Choose the correct one if you know it.</p><div class="field"><label for="modelSelect">iPhone model</label><select id="modelSelect"></select></div><div id="deviceMetrics" class="metric"></div><p class="small muted">Your selection is saved on this device and used by the test results. The raw screen/viewport measurements are still saved separately.</p></section>
 <section class="card"><h2>Build diagnostics</h2><div id="buildInfo" class="metric"></div><p class="small muted">If something looks stale, send this block with your report.</p></section>
 <a class="btn" href="./">Start the test</a>
 </main>
 <script>
 (()=>{
- const BUILD={instructions:'v2',app:'v5',deviceDetect:'v3',styles:'v5',serviceWorker:'thumbtype-lab-v8'};
+ const BUILD={instructions:'v3',app:'v5',deviceDetect:'v4',styles:'v5',serviceWorker:'thumbtype-lab-v9'};
+ const STORAGE_KEY='thumbtype.hardwareModel';
  const sw=Math.min(screen.width,screen.height),sh=Math.max(screen.width,screen.height),dpr=devicePixelRatio||1;
  const vv=window.visualViewport;
  const vw=Math.round(vv?.width||innerWidth||screen.width),vh=Math.round(vv?.height||innerHeight||screen.height),portraitWidth=Math.min(vw,vh);
- const newestByViewportWidth={
-  '320@2':'iPhone SE (1st gen)',
-  '360@3':'iPhone 13 mini',
-  '375@2':'iPhone SE (3rd gen)',
-  '375@3':'iPhone 11 Pro',
-  '390@3':'iPhone 17e',
-  '393@3':'iPhone 16',
-  '402@3':'iPhone 18 Pro',
-  '414@2':'iPhone 11',
-  '414@3':'iPhone 11 Pro Max',
-  '420@3':'iPhone Air',
-  '428@3':'iPhone 14 Plus',
-  '430@3':'iPhone 16 Plus',
-  '440@3':'iPhone 18 Pro Max'
+ const rankedByWidth={
+  '440@3':['iPhone 18 Pro Max','iPhone 17 Pro Max','iPhone 16 Pro Max'],
+  '430@3':['iPhone 16 Plus','iPhone 15 Pro Max','iPhone 15 Plus','iPhone 14 Pro Max'],
+  '428@3':['iPhone 14 Plus','iPhone 13 Pro Max','iPhone 12 Pro Max'],
+  '420@3':['iPhone Air'],
+  '402@3':['iPhone 18 Pro','iPhone 17 Pro','iPhone 16 Pro'],
+  '393@3':['iPhone 16','iPhone 15 Pro','iPhone 15','iPhone 14 Pro'],
+  '390@3':['iPhone 17e','iPhone 16e','iPhone 14','iPhone 13 Pro','iPhone 13','iPhone 12 Pro','iPhone 12'],
+  '375@3':['iPhone 11 Pro','iPhone XS','iPhone X'],
+  '375@2':['iPhone SE (3rd gen)','iPhone SE (2nd gen)','iPhone 8','iPhone 7','iPhone 6s','iPhone 6'],
+  '360@3':['iPhone 13 mini','iPhone 12 mini'],
+  '414@3':['iPhone 11 Pro Max','iPhone XS Max'],
+  '414@2':['iPhone 11','iPhone XR'],
+  '320@2':['iPhone SE (1st gen)','iPhone 5s','iPhone 5c','iPhone 5']
  };
- const fallbackByScreen={
-  '320x568@2':'iPhone SE (1st gen)',
-  '375x667@2':'iPhone SE (3rd gen)',
-  '414x736@3':'iPhone 8 Plus',
-  '375x812@3':'iPhone 11 Pro',
-  '414x896@2':'iPhone 11',
-  '414x896@3':'iPhone 11 Pro Max',
-  '360x780@3':'iPhone 13 mini',
-  '390x844@3':'iPhone 17e',
-  '393x852@3':'iPhone 16',
-  '402x874@3':'iPhone 18 Pro',
-  '420x912@3':'iPhone Air',
-  '428x926@3':'iPhone 14 Plus',
-  '430x932@3':'iPhone 16 Plus',
-  '440x956@3':'iPhone 18 Pro Max'
- };
- const viewportKey=`${portraitWidth}@${dpr}`,screenKey=`${sw}x${sh}@${dpr}`;
- const guess=newestByViewportWidth[viewportKey]||fallbackByScreen[screenKey]||'No reliable model guess';
+ const viewportKey=`${portraitWidth}@${dpr}`;
+ const options=[...(rankedByWidth[viewportKey]||[])];
+ const saved=localStorage.getItem(STORAGE_KEY);
+ if(saved&&!options.includes(saved))options.unshift(saved);
+ if(!options.length)options.push('Unknown iPhone model');
+ const select=document.querySelector('#modelSelect');
+ options.forEach((name,i)=>{const o=document.createElement('option');o.value=name;o.textContent=i===0&&!saved?`${name} — most likely`:name;select.appendChild(o)});
+ select.value=saved&&options.includes(saved)?saved:options[0];
+ if(!saved)localStorage.setItem(STORAGE_KEY,select.value);
+ select.addEventListener('change',()=>localStorage.setItem(STORAGE_KEY,select.value));
  const visual=vv?`${Math.round(vv.width)}x${Math.round(vv.height)} scale ${vv.scale}`:'unavailable';
- document.querySelector('#deviceMetrics').textContent=`Likely model: ${guess}\nScreen: ${sw} × ${sh} CSS px\nPixel ratio: ${dpr}\nViewport: ${innerWidth} × ${innerHeight}\nVisual viewport: ${visual}\nDetection key: viewport ${viewportKey}; screen ${screenKey}`;
+ document.querySelector('#deviceMetrics').textContent=`Screen: ${sw} × ${sh} CSS px\nPixel ratio: ${dpr}\nViewport: ${innerWidth} × ${innerHeight}\nVisual viewport: ${visual}\nDetection key: viewport ${viewportKey}; screen ${sw}x${sh}@${dpr}`;
  document.querySelector('#buildInfo').textContent=`instructions.html ${BUILD.instructions}\napp.js ${BUILD.app}\ndevice-detect.js ${BUILD.deviceDetect}\nstyles.css ${BUILD.styles}\nservice worker ${BUILD.serviceWorker}`;
 })();
 </script>
