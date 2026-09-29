@@ -1,4 +1,4 @@
-const CACHE='thumbtype-lab-v20';
+const CACHE='thumbtype-lab-v21';
 const ASSETS=['./','./index.html','./instructions.html','./styles.css?v=5','./app.js?v=11','./device-detect.js?v=4','./preferences.js?v=2','./results-reopen.js?v=1','./accuracy-audio.js?v=6','./manifest.webmanifest','./icon.svg'];
 
 self.addEventListener('install',event=>{
