@@ -19,7 +19,6 @@
     const w=Math.min(screen.width,screen.height), h=Math.max(screen.width,screen.height), dpr=window.devicePixelRatio||1;
     const key=`${w}x${h}@${dpr}`;
     const guesses={
-      // Prefer the newest known iPhone that matches each ambiguous screen profile.
       '320x568@2':'iPhone SE (1st gen)',
       '375x667@2':'iPhone SE (3rd gen)',
       '414x736@3':'iPhone 8 Plus',
@@ -141,16 +140,37 @@
     $('#resultsModal').classList.remove('hidden');$('#status').textContent='Comparison complete.';soundOpen();
   }
 
-  function buildPayload(){return {experiment:'iPhone thumb keyboard touch comparison',version:11,created:new Date().toISOString(),alignment:'semi-global prefix Levenshtein',phrase,repetitions,modes:modes.map(m=>m.id),os:$('#osVersion').value.trim()||'Unknown',hardware:$('#hardwareModel').value.trim()||'Unknown',userAgent:navigator.userAgent,screen:{width:screen.width,height:screen.height,devicePixelRatio:window.devicePixelRatio},summary:{left:statsFor('left'),right:statsFor('right'),both:statsFor('both')},samples:samples.map(({clientX,clientY,...s})=>s)}}
+  function buildPayload(){return {experiment:'iPhone thumb keyboard touch comparison',version:12,created:new Date().toISOString(),alignment:'semi-global prefix Levenshtein',phrase,repetitions,modes:modes.map(m=>m.id),os:$('#osVersion').value.trim()||'Unknown',hardware:$('#hardwareModel').value.trim()||'Unknown',userAgent:navigator.userAgent,screen:{width:screen.width,height:screen.height,devicePixelRatio:window.devicePixelRatio,innerWidth,innerHeight,visualViewport:window.visualViewport?{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale}:null},summary:{left:statsFor('left'),right:statsFor('right'),both:statsFor('both')},samples:samples.map(({clientX,clientY,...s})=>s)}}
   const payloadText=()=>JSON.stringify(buildPayload(),null,2);
-  function showRaw(){ensureAudio();$('#rawText').textContent=payloadText();$('#rawModal').classList.remove('hidden');soundOpen()}
+
+  function shareMessage(){
+    const rows=modes.map(m=>[m.id,statsFor(m.id)]).filter(([,s])=>s);
+    const lines=['ThumbType Lab results',`Phrase: “${phrase}”`,`Device: ${$('#hardwareModel').value.trim()||'Unknown'} · ${$('#osVersion').value.trim()||'Unknown'}`,''];
+    rows.forEach(([id,s])=>lines.push(`${modeName(id)}: ${s.avgWpm.toFixed(0)} WPM · ${Math.round(s.errorRate*100)}% errors · ${s.radial.toFixed(1)} px mean offset`));
+    if(rows.length){
+      const fastest=[...rows].sort((a,b)=>b[1].avgWpm-a[1].avgWpm)[0];
+      const accurate=[...rows].sort((a,b)=>a[1].errorRate-b[1].errorRate)[0];
+      lines.push('',`Fastest: ${modeName(fastest[0])} (${fastest[1].avgWpm.toFixed(0)} WPM)`,`Most accurate: ${modeName(accurate[0])} (${Math.round(accurate[1].errorRate*100)}% errors)`);
+    }
+    lines.push('','ThumbType Lab');
+    return lines.join('\n');
+  }
+
   function closeModal(sel){$(sel).classList.add('hidden');soundClose()}
-  async function sharePayload(){
-    ensureAudio();const text=payloadText();
+  async function shareResultsMessage(){
+    ensureAudio();const text=shareMessage();
     try{
-      if(navigator.share){const file=new File([text],'thumbtype-results.json',{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({title:'ThumbType Lab results',text:'My thumb typing test results',files:[file]});else await navigator.share({title:'ThumbType Lab results',text});}
-      else downloadPayload();
+      if(navigator.share)await navigator.share({title:'ThumbType Lab results',text});
+      else if(navigator.clipboard){await navigator.clipboard.writeText(text);$('#status').textContent='Results copied to clipboard.';}
+      else $('#status').textContent='Sharing is not available on this device.';
     }catch(e){if(e.name!=='AbortError')$('#status').textContent='Could not share results.'}
+  }
+  async function shareRawData(){
+    ensureAudio();const text=payloadText(),file=new File([text],'thumbtype-results.json',{type:'application/json'});
+    try{
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({title:'ThumbType Lab raw data',files:[file]});
+      else downloadPayload();
+    }catch(e){if(e.name!=='AbortError')$('#status').textContent='Could not share raw data.'}
   }
   function downloadPayload(){const blob=new Blob([payloadText()],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='thumbtype-results.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
@@ -166,7 +186,7 @@
     $('#sampleCount').textContent=samples.filter(s=>s.type==='touch').length+touches.length;if(consumed>=phrase.length)finalizeRepetition();
   });
 
-  $('#goButton').addEventListener('click',hideReady);$('#shareResults').addEventListener('click',sharePayload);$('#resultsShare').addEventListener('click',sharePayload);$('#rawData').addEventListener('click',showRaw);$('#resultsRaw').addEventListener('click',showRaw);$('#closeResults').addEventListener('click',()=>closeModal('#resultsModal'));$('#closeRaw').addEventListener('click',()=>closeModal('#rawModal'));$('#downloadRaw').addEventListener('click',downloadPayload);
+  $('#goButton').addEventListener('click',hideReady);$('#shareResults').addEventListener('click',shareResultsMessage);$('#resultsShare').addEventListener('click',shareResultsMessage);$('#rawData').addEventListener('click',shareRawData);$('#resultsRaw').addEventListener('click',shareRawData);$('#closeResults').addEventListener('click',()=>closeModal('#resultsModal'));$('#closeRaw').addEventListener('click',()=>closeModal('#rawModal'));$('#downloadRaw').addEventListener('click',downloadPayload);
   $('#restart').addEventListener('click',()=>{ensureAudio();tone(330,.05,.024);resetAll()});
   $('#newPhrase').addEventListener('click',()=>{ensureAudio();let next=phrase;while(next===phrase)next=phrases[Math.floor(Math.random()*phrases.length)];phrase=next;$('#phrase').textContent=phrase;resetAll()});
 
