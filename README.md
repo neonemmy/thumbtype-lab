@@ -27,7 +27,7 @@ Results can be shared or downloaded as JSON.
 
 Serve the repository with `python3 -m http.server 8765` and open
 `http://localhost:8765`. Run `node tests/verify.cjs` with Node.js 20 or newer
-for dependency-free regression checks covering audio mapping/lifecycle, all
+for dependency-free regression checks covering good/bad cues and audio lifecycle, all
 nine runs, sample exports, wrong keys/gaps, unavailable audio, and failed-share
 fallback versus cancellation. These use mocked DOM and audio APIs; they do
 not replace browser testing or listening on an iPhone.

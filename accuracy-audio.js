@@ -1,32 +1,48 @@
 (()=>{
   'use strict';
-  const referenceHz=900, scales=[50,150,300];
-  let voices=null;
+  // One quiet, finite voice per tap. A new tap fades out the previous cue.
+  const cues={
+    good:{frequencies:[880,1320,1760],times:[0,.035,.07],duration:.12},
+    bad:{frequencies:[392,330,262,131],times:[0,.055,.11,.17],duration:.25}
+  };
+  let voice=null;
+
   function stop(){
-    if(!voices)return;
-    const {ctx,gain,oscillators}=voices,t=ctx.currentTime;
-    gain.gain.cancelScheduledValues(t);
-    gain.gain.setTargetAtTime(0,t,.015);
-    oscillators.forEach(o=>{o.stop(t+.08);o.onended=()=>o.disconnect()});
-    oscillators[0].onended=()=>{oscillators[0].disconnect();gain.disconnect()};
-    voices=null;
+    if(!voice)return;
+    const {ctx,gain,oscillator}=voice,t=ctx.currentTime;
+    if(gain.gain.cancelAndHoldAtTime)gain.gain.cancelAndHoldAtTime(t);
+    else gain.gain.cancelScheduledValues(t);
+    gain.gain.setTargetAtTime(0,t,.003);
+    oscillator.stop(t+.015);
+    voice=null;
   }
-  function start(ctx){
+
+  function play(ctx,good){
     stop();
-    if(!ctx)return;
-    const gain=ctx.createGain(),oscillators=[ctx.createOscillator(),ctx.createOscillator()];
-    gain.gain.setValueAtTime(0,ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(.045,ctx.currentTime+.04);
-    gain.connect(ctx.destination);
-    oscillators.forEach(o=>{o.type='sine';o.frequency.value=referenceHz;o.connect(gain);o.start()});
-    voices={ctx,gain,oscillators};
+    const outcome=good?'good':'bad',cue=cues[outcome];
+    if(ctx){
+      const t=ctx.currentTime,oscillator=ctx.createOscillator(),gain=ctx.createGain();
+      oscillator.type='triangle';
+      cue.frequencies.forEach((hz,i)=>{
+        const at=t+cue.times[i];
+        if(i)oscillator.frequency.linearRampToValueAtTime(hz,at+.008);
+        else oscillator.frequency.setValueAtTime(hz,at);
+        oscillator.frequency.setValueAtTime(hz,t+(cue.times[i+1]??cue.duration));
+      });
+      gain.gain.setValueAtTime(0,t);
+      gain.gain.linearRampToValueAtTime(.035,t+.006);
+      gain.gain.setValueAtTime(.035,t+cue.duration-.045);
+      gain.gain.linearRampToValueAtTime(0,t+cue.duration);
+      oscillator.connect(gain);gain.connect(ctx.destination);
+      const current={ctx,gain,oscillator};voice=current;
+      oscillator.onended=()=>{
+        oscillator.disconnect();gain.disconnect();
+        if(voice===current)voice=null;
+      };
+      oscillator.start(t);oscillator.stop(t+cue.duration+.005);
+    }
+    return {outcome,durationMs:cue.duration*1000,audioState:ctx?.state||'unavailable'};
   }
-  function update(key,x,y,scaleCents){
-    const r=key?.getBoundingClientRect();
-    const distance=r&&r.width>0&&r.height>0?Math.hypot((x-r.left-r.width/2)/(r.width/2),(y-r.top-r.height/2)/(r.height/2)):null;
-    const cents=distance===null?0:scaleCents*Math.min(distance,2);
-    if(voices)voices.oscillators[1].detune.setTargetAtTime(cents,voices.ctx.currentTime,.025);
-    return {referenceHz,scaleCents,detuneCents:cents,secondaryHz:referenceHz*2**(cents/1200),normalizedDistance:distance,audioState:voices?.ctx.state||'unavailable'};
-  }
-  window.ThumbTypeAudio={referenceHz,scales,get active(){return !!voices},scaleFor:(modeIndex,repetition)=>scales[(modeIndex+repetition-1)%scales.length],start,stop,update};
+
+  window.ThumbTypeAudio={cues,get active(){return !!voice},play,stop};
 })();
