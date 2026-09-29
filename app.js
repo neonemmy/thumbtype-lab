@@ -49,7 +49,17 @@
     const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(volume,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+duration+.02);
   }
-  const soundCorrect=()=>tone(760,.045,.024), soundError=()=>tone(230,.07,.038), soundOpen=()=>{tone(520,.05,.025);tone(720,.07,.025,.06)}, soundClose=()=>{tone(700,.04,.024);tone(500,.05,.022,.045)}, soundFinished=()=>{tone(520,.05,.03);tone(660,.06,.03,.06);tone(880,.1,.035,.13)};
+  function soundAccuracy(expected,x,y){
+    const target=keyMap.get(expected);
+    if(!target){tone(220,.065,.035);return {frequency:220,normalizedDistance:null}}
+    const r=target.getBoundingClientRect();
+    const nx=(x-(r.left+r.width/2))/(r.width/2),ny=(y-(r.top+r.height/2))/(r.height/2);
+    const distance=Math.hypot(nx,ny),d=Math.min(distance,2);
+    const freq=d<=1?900-350*d:550-330*(d-1);
+    tone(freq,.045+d*.008,.028);
+    return {frequency:+freq.toFixed(1),normalizedDistance:+distance.toFixed(3)};
+  }
+  const soundOpen=()=>{tone(520,.05,.025);tone(720,.07,.025,.06)}, soundClose=()=>{tone(700,.04,.024);tone(500,.05,.022,.045)}, soundFinished=()=>{tone(520,.05,.03);tone(660,.06,.03,.06);tone(880,.1,.035,.13)};
 
   function alignPrefix(expected,actual){
     const n=expected.length,m=actual.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0)),op=Array.from({length:n+1},()=>Array(m+1).fill(null));
@@ -140,7 +150,7 @@
     $('#resultsModal').classList.remove('hidden');$('#status').textContent='Comparison complete.';soundOpen();
   }
 
-  function buildPayload(){return {experiment:'iPhone thumb keyboard touch comparison',version:12,created:new Date().toISOString(),alignment:'semi-global prefix Levenshtein',phrase,repetitions,modes:modes.map(m=>m.id),os:$('#osVersion').value.trim()||'Unknown',hardware:$('#hardwareModel').value.trim()||'Unknown',userAgent:navigator.userAgent,screen:{width:screen.width,height:screen.height,devicePixelRatio:window.devicePixelRatio,innerWidth,innerHeight,visualViewport:window.visualViewport?{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale}:null},summary:{left:statsFor('left'),right:statsFor('right'),both:statsFor('both')},samples:samples.map(({clientX,clientY,...s})=>s)}}
+  function buildPayload(){return {experiment:'iPhone thumb keyboard touch comparison',version:13,created:new Date().toISOString(),alignment:'semi-global prefix Levenshtein',audioFeedback:'continuous pitch by normalized distance from intended key center',phrase,repetitions,modes:modes.map(m=>m.id),os:$('#osVersion').value.trim()||'Unknown',hardware:$('#hardwareModel').value.trim()||'Unknown',userAgent:navigator.userAgent,screen:{width:screen.width,height:screen.height,devicePixelRatio:window.devicePixelRatio,innerWidth,innerHeight,visualViewport:window.visualViewport?{width:visualViewport.width,height:visualViewport.height,scale:visualViewport.scale}:null},summary:{left:statsFor('left'),right:statsFor('right'),both:statsFor('both')},samples:samples.map(({clientX,clientY,...s})=>s)}}
   const payloadText=()=>JSON.stringify(buildPayload(),null,2);
 
   function shareMessage(){
@@ -182,7 +192,9 @@
     if(completed||locked)return;if(e.pointerType==='mouse'&&e.button!==0)return;ensureAudio();
     const expected=phrase[consumed]||null,br=keyboard.getBoundingClientRect(),hit=findHitKey(e.clientX,e.clientY);
     touches.push({mode:modes[modeIndex].id,repetition,hit,x:+(e.clientX-br.left).toFixed(2),y:+(e.clientY-br.top).toFixed(2),clientX:e.clientX,clientY:e.clientY,timestamp:new Date().toISOString()});addDot(e);recalc();
-    const last=alignment.filter(a=>a.touchIndex===touches.length-1).pop();if(last&&last.type==='match')soundCorrect();else if(hit===expected)soundCorrect();else soundError();
+    const last=alignment.filter(a=>a.touchIndex===touches.length-1).pop();
+    const feedbackExpected=last&&Number.isInteger(last.expectedIndex)?phrase[last.expectedIndex]:expected;
+    touches[touches.length-1].audioFeedback=soundAccuracy(feedbackExpected,e.clientX,e.clientY);
     $('#sampleCount').textContent=samples.filter(s=>s.type==='touch').length+touches.length;if(consumed>=phrase.length)finalizeRepetition();
   });
 
